@@ -1,4 +1,8 @@
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/.mujoco/mujoco210/bin
 # Examples:
+
+# bash scripts/train_policy.sh <policy> <task_env>_<task> <info (for saving name)> <seed> <gpu_id>
+
 # bash scripts/train_policy.sh dp3 adroit_hammer 0322 0 0
 # bash scripts/train_policy.sh dp3 dexart_laptop 0322 0 0
 # bash scripts/train_policy.sh simple_dp3 adroit_hammer 0322 0 0
