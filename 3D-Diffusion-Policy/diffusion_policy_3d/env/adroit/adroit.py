@@ -307,7 +307,7 @@ class AdroitEnv:
             dtype=np.float64
         )
         self.observation_space = spaces.Dict({
-            'image': spaces.Box(
+            'img': spaces.Box(
                 low=0,
                 high=1,
                 shape=(number_channel, 84, 84),
@@ -343,7 +343,7 @@ class AdroitEnv:
         action = np.zeros(action_spec.shape, dtype=action_spec.dtype)
 
         obs_dict = {
-            'image': obs_pixels,
+            'img': obs_pixels,
             'agent_pos': obs_sensor
         }
         return obs_dict
@@ -389,7 +389,7 @@ class AdroitEnv:
         reward = reward * self.reward_rescale_factor
 
         obs_dict = {
-            'image': obs_pixels,  # (3, 84, 84), [0,255], uint8
+            'img': obs_pixels,  # (3, 84, 84), [0,255], uint8
             'agent_pos': obs_sensor  # (24,)
         }
 
