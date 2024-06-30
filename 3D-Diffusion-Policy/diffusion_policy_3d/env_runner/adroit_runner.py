@@ -87,9 +87,8 @@ class AdroitRunner(BaseRunner):
 
                 # run policy
                 with torch.no_grad():
-                    obs_dict_input = {}  # flush unused keys
-                    obs_dict_input['point_cloud'] = obs_dict['point_cloud'].unsqueeze(0)
-                    obs_dict_input['agent_pos'] = obs_dict['agent_pos'].unsqueeze(0)
+                    policy_normalizer_keys = policy.normalizer.params_dict.keys()
+                    obs_dict_input = {key: obs_dict[key].unsqueeze(0) for key in policy_normalizer_keys if key in obs_dict}
                     action_dict = policy.predict_action(obs_dict_input)
                     
 
