@@ -60,7 +60,7 @@ class AdroitDataset(BaseDataset):
         return val_set
 
     def get_normalizer(self, mode='limits', **kwargs):
-        obs = {key: self.replay_buffer[key] for key in self.obs_keys}
+        obs = {key: self.replay_buffer[key] for key in self.replay_buffer.keys()}
 
         data = {
             'action': self.replay_buffer['action'],
