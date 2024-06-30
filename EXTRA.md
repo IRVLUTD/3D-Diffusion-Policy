@@ -4,6 +4,12 @@
 mamba activate dp3
 ```
 
+## Robomimic dependency for DP vision encoder
+
+```
+pip3 install robomimic
+```
+
 ## Generating all the demonstrations
 
 Ran form the `3D-Diffusion-Policy` folder
@@ -25,4 +31,3 @@ bash scripts/train_policy.sh <policy> <task_env>_<task> <info (for saving name)>
 ```
 bash scripts/train_all_policies.sh <policy> <info (for saving name)> <seed> <gpu_id>
 ```
-
