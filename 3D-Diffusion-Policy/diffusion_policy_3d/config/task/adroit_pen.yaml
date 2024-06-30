@@ -6,9 +6,9 @@ image_shape: &image_shape [3, 84, 84]
 shape_meta: &shape_meta
   # acceptable types: rgb, low_dim
   obs:
-    # image:
-    #     shape: *image_shape
-    #     type: rgb
+    image:
+        shape: *image_shape
+        type: rgb
     point_cloud:
       shape: [512, 3]
       type: point_cloud
@@ -38,4 +38,4 @@ dataset:
   seed: 42
   val_ratio: 0.02
   max_train_episodes: 90
-  obs_keys: ["point_cloud"] # "img"
+  obs_keys: ["point_cloud", "img"] # img, point_cloud

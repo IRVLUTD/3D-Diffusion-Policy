@@ -57,6 +57,8 @@ policy:
   use_pc_color: false
   pointnet_type: "pointnet"
 
+  use_pointcloud: false
+  use_image: true
 
   pointcloud_encoder_cfg:
     in_channels: 3
