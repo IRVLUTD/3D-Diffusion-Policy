@@ -40,6 +40,7 @@ class DP3(BasePolicy):
             use_pc_color=False,
             use_pointcloud=True,
             use_image=True,
+            use_depth_image=False,
             pointnet_type="pointnet",
             pointcloud_encoder_cfg=None,
             # parameters passed to step
@@ -70,6 +71,7 @@ class DP3(BasePolicy):
             pointnet_type=pointnet_type,
             use_pointcloud=use_pointcloud,
             use_image=use_image,
+            use_depth_image=use_depth_image,
         )
 
         # create diffusion model

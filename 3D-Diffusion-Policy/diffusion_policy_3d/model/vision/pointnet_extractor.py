@@ -213,6 +213,7 @@ class DP3Encoder(nn.Module):
                  pointnet_type='pointnet',
                  use_pointcloud=True,
                  use_image=True,
+                 use_depth_image=False,
                  ):
         super().__init__()
         self.imagination_key = 'imagin_robot'
@@ -222,7 +223,10 @@ class DP3Encoder(nn.Module):
         self.n_output_channels = out_channel
 
         self.use_pointcloud = use_pointcloud
+
+        assert not (use_image and use_depth_image), "ERROR: Both use_image and use_depth_image are enabled. Choose one." 
         self.use_image = use_image
+        self.use_depth_image = use_depth_image
 
         
         self.use_imagined_robot = self.imagination_key in observation_space.keys()
@@ -234,7 +238,7 @@ class DP3Encoder(nn.Module):
         else:
             self.imagination_shape = None
             
-        cprint(f"use_pointcloud: {self.use_pointcloud}, use_image: {self.use_image}", "yellow")
+        cprint(f"use_pointcloud: {self.use_pointcloud}, use_image: {self.use_image}, use_depth_image: {use_depth_image}", "yellow")
         cprint(f"[DP3Encoder] point cloud shape: {self.point_cloud_shape}", "yellow")
         cprint(f"[DP3Encoder] rgb image shape: {self.rgb_image_shape}", "yellow")
         cprint(f"[DP3Encoder] state shape: {self.state_shape}", "yellow")
@@ -244,9 +248,11 @@ class DP3Encoder(nn.Module):
         self.use_pc_color = use_pc_color
         self.pointnet_type = pointnet_type
 
-        if use_image:
-            self.image_encoder = get_dp_image_encoder(self.rgb_image_shape, out_channel)
+        if use_image or use_depth_image:
+            encoder_dims = (self.rgb_image_shape[0]+int(use_depth_image), *self.rgb_image_shape[1:]) # Adds depth dim
+            self.image_encoder = get_dp_image_encoder(encoder_dims, out_channel)
             self.n_output_channels  += out_channel
+
 
         if use_pointcloud:
             if pointnet_type == "pointnet":
@@ -290,10 +296,15 @@ class DP3Encoder(nn.Module):
             pn_feat = self.extractor(points) # B * out_channel
             features.append(pn_feat)
 
-        if self.use_image:
+        if self.use_image or self.use_depth_image:
             images = observations['img']
-            if images.shape[-1] == 3 or images.shape[-1] == 4:
+            if images.shape[-1] == 3:
                 images = images.transpose(1,-1)  # B W H C -> B C H W
+
+            if self.use_depth_image:
+                depth = observations['depth']
+                depth_images = torch.cat([images,depth.unsqueeze(1)], dim=1)
+                images = depth_images
 
             img_feats = self.image_encoder(images) 
             features.append(img_feats)

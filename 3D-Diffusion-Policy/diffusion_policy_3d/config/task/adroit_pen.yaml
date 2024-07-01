@@ -38,4 +38,4 @@ dataset:
   seed: 42
   val_ratio: 0.02
   max_train_episodes: 90
-  obs_keys: ["point_cloud", "img"] # img, point_cloud
+  obs_keys: ["point_cloud", "img", "depth"] # img, point_cloud
