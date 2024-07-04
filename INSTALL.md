@@ -53,10 +53,7 @@ export MUJOCO_GL=egl
 ```
 and then install mujoco-py (in the folder of `third_party`):
 ```
-cd YOUR_PATH_TO_THIRD_PARTY
-cd mujoco-py-2.1.2.14
-pip install -e .
-cd ../..
+cd third_party/mujoco-py-2.1.2.14/ && pip install -e . && cd ../../
 ```
 
 ----
