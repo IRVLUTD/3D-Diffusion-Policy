@@ -12,6 +12,7 @@ from termcolor import cprint
 from gym import spaces
 from diffusion_policy_3d.gym_util.mujoco_point_cloud import PointCloudGenerator
 from diffusion_policy_3d.gym_util.mjpc_wrapper import point_cloud_sampling
+from mujoco_py.generated import const
 
 TASK_BOUDNS = {
     'default': [-0.5, -1.5, -0.795, 1, -0.4, 100],
@@ -181,8 +182,25 @@ class MetaWorldEnv(gym.Env):
         raw_state, reward, done, env_info = self.env.step(action)
         self.cur_step += 1
 
+        segmentation = self.env.sim.render(width=self.image_size, height=self.image_size, camera_name="corner2", segmentation=True, device_id=self.device_id)
+        segmentation = segmentation.transpose((2,0,1))
+        types, ids = segmentation[0, :, :], segmentation[1, :, :]
+        geoms = types == const.OBJ_GEOM
+        geoms_ids = np.unique(ids[geoms])
+        names = [self.env.sim.model.geom_id2name(i) for i in geoms_ids]
+        print(names)
+        plt.imshow(ids, 'tab20b')
+        plt.colorbar()
+        plt.title(f"Segmentation")
+        plt.show()
+
 
         obs_pixels = self.get_rgb()
+        plt.imshow(obs_pixels)
+        plt.colorbar()
+        plt.title(f"RGB")
+        plt.show()
+
         robot_state = self.get_robot_state()
         point_cloud, depth = self.get_point_cloud()
         

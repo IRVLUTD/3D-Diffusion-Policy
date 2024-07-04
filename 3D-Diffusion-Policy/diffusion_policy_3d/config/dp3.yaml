@@ -58,8 +58,8 @@ policy:
   pointnet_type: "pointnet"
 
   use_pointcloud: false 
-  use_image: false
-  use_depth_image: true
+  use_image: true
+  use_depth_image: false
 
   pointcloud_encoder_cfg:
     in_channels: 3

@@ -79,14 +79,14 @@ class MetaworldRunner(BaseRunner):
             is_success = False
             while not done:
                 np_obs_dict = dict(obs)
+                np_obs_dict['img'] = np_obs_dict.pop('image')
                 obs_dict = dict_apply(np_obs_dict,
                                       lambda x: torch.from_numpy(x).to(
                                           device=device))
 
                 with torch.no_grad():
-                    obs_dict_input = {}
-                    obs_dict_input['point_cloud'] = obs_dict['point_cloud'].unsqueeze(0)
-                    obs_dict_input['agent_pos'] = obs_dict['agent_pos'].unsqueeze(0)
+                    policy_normalizer_keys = policy.normalizer.params_dict.keys()
+                    obs_dict_input = {key: obs_dict[key].unsqueeze(0) for key in policy_normalizer_keys if key in obs_dict}
                     action_dict = policy.predict_action(obs_dict_input)
 
                 np_action_dict = dict_apply(action_dict,

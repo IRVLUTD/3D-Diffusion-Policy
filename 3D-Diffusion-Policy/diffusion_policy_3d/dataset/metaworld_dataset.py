@@ -18,10 +18,11 @@ class MetaworldDataset(BaseDataset):
             seed=42,
             val_ratio=0.0,
             max_train_episodes=None,
+            obs_keys=['point_cloud']
             ):
         super().__init__()
         self.replay_buffer = ReplayBuffer.copy_from_path(
-            zarr_path, keys=['state', 'action', 'point_cloud'])
+            zarr_path, keys=['state', 'action', 'point_cloud', 'img', 'depth'])
         val_mask = get_val_mask(
             n_episodes=self.replay_buffer.n_episodes, 
             val_ratio=val_ratio,
@@ -42,6 +43,7 @@ class MetaworldDataset(BaseDataset):
         self.horizon = horizon
         self.pad_before = pad_before
         self.pad_after = pad_after
+        self.obs_keys = obs_keys
 
     def get_validation_dataset(self):
         val_set = copy.copy(self)
@@ -56,10 +58,12 @@ class MetaworldDataset(BaseDataset):
         return val_set
 
     def get_normalizer(self, mode='limits', **kwargs):
+        obs = {key: self.replay_buffer[key] for key in self.replay_buffer.keys()}
+
         data = {
             'action': self.replay_buffer['action'],
             'agent_pos': self.replay_buffer['state'][...,:],
-            'point_cloud': self.replay_buffer['point_cloud'],
+            **obs
         }
         normalizer = LinearNormalizer()
         normalizer.fit(data=data, last_n_dims=1, mode=mode, **kwargs)
@@ -70,12 +74,12 @@ class MetaworldDataset(BaseDataset):
 
     def _sample_to_data(self, sample):
         agent_pos = sample['state'][:,].astype(np.float32)
-        point_cloud = sample['point_cloud'][:,].astype(np.float32)
+        obs = {key: sample[key][:,].astype(np.float32) for key in self.obs_keys}
 
         data = {
             'obs': {
-                'point_cloud': point_cloud, 
-                'agent_pos': agent_pos, 
+                'agent_pos': agent_pos,
+                **obs 
             },
             'action': sample['action'].astype(np.float32)
         }
