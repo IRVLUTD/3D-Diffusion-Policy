@@ -64,6 +64,7 @@ pip install setuptools==59.5.0 Cython==0.29.35 patchelf==0.17.2.0
 
 cd third_party
 cd dexart-release && pip install -e . && cd ..
+cd Metaworld && pip3 install -e . && cd ..
 cd gym-0.21.0 && pip install -e . && cd ..
 cd rrl-dependencies && pip install -e mj_envs/. && pip install -e mjrl/. && cd ..
 ```
