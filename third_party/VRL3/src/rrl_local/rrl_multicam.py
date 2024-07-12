@@ -8,6 +8,7 @@ from rrl_local.rrl_encoder import Encoder, IdentityEncoder
 from PIL import Image
 import torch
 from collections import deque
+from mujoco_py.generated import const
 
 _mj_envs = {'pen-v0', 'hammer-v0', 'door-v0', 'relocate-v0'}
 
@@ -92,10 +93,15 @@ class BasicAdroitEnv(gym.Env): # , ABC
             qp = qp[6:-6]
 
         imgs = [] # number of image is number of camera
+        segmentations_list = []
 
         if self.encoder is not None:
             for cam in self.cameras :
                 img = self._env.env.sim.render(width=self.width, height=self.height, mode='offscreen', camera_name=cam, device_id=0)
+                segmentation = self._env.env.sim.render(width=self.width, height=self.height, mode='offscreen', camera_name=cam, segmentation=True, device_id=0) 
+                if self.channels_first:
+                    segmentation = segmentation.transpose((2, 0, 1))
+                segmentations_list.append(segmentation)
                 # img = env.env.sim.render(width=84, height=84, mode='offscreen')
                 img = img[::-1, :, : ] # Image given has to be flipped
                 if self.channels_first :
@@ -113,6 +119,10 @@ class BasicAdroitEnv(gym.Env): # , ABC
             if not self.test_image:
                 for cam in self.cameras : # for each camera, render once
                     img = self._env.env.sim.render(width=self.width, height=self.height, mode='offscreen', camera_name=cam, device_id=0) # TODO device id will think later
+                    segmentation = self._env.env.sim.render(width=self.width, height=self.height, mode='offscreen', camera_name=cam, segmentation=True, device_id=0) 
+                    if self.channels_first:
+                        segmentation = segmentation.transpose((2, 0, 1))
+                    segmentations_list.append(segmentation)
                     # img = img[::-1, :, : ] # Image given has to be flipped
                     if self.channels_first :
                         img = img.transpose((2, 0, 1)) # then it's 3 x width x height
@@ -124,6 +134,34 @@ class BasicAdroitEnv(gym.Env): # , ABC
                 img = (np.random.rand(1, 84, 84) * 255).astype(np.uint8)
                 imgs.append(img)
             pixels = np.concatenate(imgs, axis=0)
+
+            segmentations = np.concatenate(segmentations_list, axis=0)
+
+            # types, ids = segmentations[0, :, :], segmentations[1, :, :]
+            # geoms = types == const.OBJ_GEOM
+            # geoms_ids = np.unique(ids[geoms])
+            # names = [self._env.env.sim.model.geom_id2name(i) for i in geoms_ids]
+
+            # arm_ids = [geoms_ids[i] for i, name in enumerate(names) if (isinstance(name, str) and 'V' in name) or (name is None and i != 1)]
+
+            # target_names = ['target', 't_top', 't_bot', 't_cli']
+            # target_ids = [geoms_ids[names.index(name)] for name in target_names if name in names]
+
+            # object_names = ['pen', 'top', 'bot', 'cli']
+            # object_ids = [geoms_ids[names.index(name)] for name in object_names if name in names]
+
+            # seg_img = torch.ones((84, 84)) * 0
+            # for i in arm_ids:
+            #     seg_img[ids == i] = 1
+
+            # for i in target_ids:
+            #     seg_img[ids == i] = 2
+
+            # for i in object_ids:
+            #     seg_img[ids == i] = 3
+
+            # segmentations[1, :, :] = seg_img
+
 
         # TODO below are what we originally had... 
         # if not self.test_image:
@@ -145,7 +183,7 @@ class BasicAdroitEnv(gym.Env): # , ABC
             qp = None
 
         sensor_info = qp
-        return pixels, sensor_info
+        return pixels, sensor_info, segmentations
 
     def get_env_infos(self):
         return self._env.get_env_infos()
@@ -159,18 +197,18 @@ class BasicAdroitEnv(gym.Env): # , ABC
 
     def reset(self):
         self._env.reset()
-        pixels, sensor_info = self.get_obs()
+        pixels, sensor_info, segmentations = self.get_obs()
         for _ in range(self._num_frames):
             self._frames.append(pixels)
         stacked_pixels = self.get_stacked_pixels()
-        return stacked_pixels, sensor_info
+        return stacked_pixels, sensor_info, segmentations
 
     def get_obs_for_first_state_but_without_reset(self):
-        pixels, sensor_info = self.get_obs()
+        pixels, sensor_info, segmentations = self.get_obs()
         for _ in range(self._num_frames):
             self._frames.append(pixels)
         stacked_pixels = self.get_stacked_pixels()
-        return stacked_pixels, sensor_info
+        return stacked_pixels, sensor_info, segmentations
 
     def step(self, action):
         reward_sum = 0.0
@@ -185,10 +223,10 @@ class BasicAdroitEnv(gym.Env): # , ABC
                 break
         env_info['n_goal_achieved'] = n_goal_achieved
         # now get stacked frames
-        pixels, sensor_info = self.get_obs()
+        pixels, sensor_info, segmentations = self.get_obs()
         self._frames.append(pixels)
         stacked_pixels = self.get_stacked_pixels()
-        return [stacked_pixels, sensor_info], reward_sum, done, env_info
+        return [stacked_pixels, sensor_info, segmentations], reward_sum, done, env_info
 
     def set_env_state(self, state):
         return self._env.set_env_state(state)

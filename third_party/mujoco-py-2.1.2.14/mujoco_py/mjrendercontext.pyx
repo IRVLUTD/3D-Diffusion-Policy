@@ -2,6 +2,8 @@ from threading import Lock
 from mujoco_py.generated import const
 import numpy as np
 cimport numpy as np
+import matplotlib.pyplot as plt
+import sys
 
 cdef class MjRenderContext(object):
     """
@@ -194,6 +196,18 @@ cdef class MjRenderContext(object):
         if segmentation:
             seg_img = (rgb_img[:, :, 0] + rgb_img[:, :, 1] * (2**8) + rgb_img[:, :, 2] * (2 ** 16))
             seg_img[seg_img >= (self._scn.ngeom + 1)] = 0
+
+            fig, ax = plt.subplots(1, 2, figsize=(15, 10))
+            ax[0].imshow(rgb_img)
+            ax[0].set_title("RGB Image")
+            ax[0].axis('off')
+            cax = ax[1].imshow(seg_img, cmap='tab20b')
+            ax[1].set_title("Segmentation Mask")
+            ax[1].axis('off')
+            fig.colorbar(cax, ax=ax[1])
+            plt.show()
+            sys.exit()
+
             seg_ids = np.full((self._scn.ngeom + 1, 2), fill_value=-1, dtype=np.int32)
 
             for i in range(self._scn.ngeom):

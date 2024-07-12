@@ -211,9 +211,11 @@ class DP3Encoder(nn.Module):
                  pointcloud_encoder_cfg=None,
                  use_pc_color=False,
                  pointnet_type='pointnet',
+                 n_cameras=1,
                  use_pointcloud=True,
                  use_image=True,
                  use_depth_image=False,
+                 use_segmentations=False,
                  ):
         super().__init__()
         self.imagination_key = 'imagin_robot'
@@ -227,8 +229,9 @@ class DP3Encoder(nn.Module):
         assert not (use_image and use_depth_image), "ERROR: Both use_image and use_depth_image are enabled. Choose one." 
         self.use_image = use_image
         self.use_depth_image = use_depth_image
+        self.use_segmentations = use_segmentations
 
-        
+
         self.use_imagined_robot = self.imagination_key in observation_space.keys()
         self.point_cloud_shape = observation_space[self.point_cloud_key]
         self.rgb_image_shape = observation_space[self.rgb_image_key]
@@ -238,7 +241,7 @@ class DP3Encoder(nn.Module):
         else:
             self.imagination_shape = None
             
-        cprint(f"use_pointcloud: {self.use_pointcloud}, use_image: {self.use_image}, use_depth_image: {use_depth_image}", "yellow")
+        cprint(f"use_pointcloud: {self.use_pointcloud}, use_image: {self.use_image}, use_depth_image: {use_depth_image} use_segmentations: {use_segmentations}, n_cameras: {n_cameras}", "yellow")
         cprint(f"[DP3Encoder] point cloud shape: {self.point_cloud_shape}", "yellow")
         cprint(f"[DP3Encoder] rgb image shape: {self.rgb_image_shape}", "yellow")
         cprint(f"[DP3Encoder] state shape: {self.state_shape}", "yellow")
@@ -249,7 +252,9 @@ class DP3Encoder(nn.Module):
         self.pointnet_type = pointnet_type
 
         if use_image or use_depth_image:
-            encoder_dims = (self.rgb_image_shape[0]+int(use_depth_image), *self.rgb_image_shape[1:]) # Adds depth dim
+            channels = (self.rgb_image_shape[0] + int(use_depth_image) + int(use_segmentations) * 2) * n_cameras # 2 channels of segementation 
+            encoder_dims = (channels, *self.rgb_image_shape[1:]) # Adds depth dim
+            cprint(f"[DP3Encoder] encoder dims: {encoder_dims}", "yellow")
             self.image_encoder = get_dp_image_encoder(encoder_dims, out_channel)
             self.n_output_channels  += out_channel
 
@@ -282,7 +287,7 @@ class DP3Encoder(nn.Module):
         cprint(f"[DP3Encoder] output dim: {self.n_output_channels}", "red")
 
 
-    def forward(self, observations: Dict) -> torch.Tensor:
+    def forward(self, observations: Dict) -> torch.Tensor: 
         features = []
         if self.use_pointcloud:
             points = observations[self.point_cloud_key]
@@ -303,8 +308,12 @@ class DP3Encoder(nn.Module):
 
             if self.use_depth_image:
                 depth = observations['depth']
-                depth_images = torch.cat([images,depth.unsqueeze(1)], dim=1)
+                depth_images = torch.cat([images, depth.unsqueeze(1)], dim=1)
                 images = depth_images
+
+            if self.use_segmentations:
+                segmentations = observations['segmentations']
+                images = torch.cat([images, segmentations], dim=1)
 
             img_feats = self.image_encoder(images) 
             features.append(img_feats)

@@ -80,6 +80,7 @@ def main():
     depth_arrays = []
     state_arrays = []
     action_arrays = []
+    segmentation_arrays = []
     episode_ends_arrays = []
     
 
@@ -90,7 +91,8 @@ def main():
         env = create_env()
         time_step = env.reset()
         input_obs_visual = time_step.observation # (3n,84,84), unit8
-        input_obs_sensor = time_step.observation_sensor # float32, door(24,)q        
+        input_obs_sensor = time_step.observation_sensor # float32, door(24,)q    
+        input_obs_segmentations =  time_step.segmentations  
 
         total_reward = 0.
         n_goal_achieved_total = 0.
@@ -101,12 +103,14 @@ def main():
         depth_arrays_sub = []
         state_arrays_sub = []
         action_arrays_sub = []
+        segmentation_arrays_sub = []
         total_count_sub = 0
         
         while (not time_step.last()) or step_count < minimal_episode_length:
             with torch.no_grad(), utils.eval_mode(expert_agent):
                 input_obs_visual = time_step.observation
                 input_obs_sensor = time_step.observation_sensor
+                input_obs_segmentations =  time_step.segmentations
                 # cam: top, vil_camera, fixed
                 # vrl3_input = render_camera(env.env._env.sim, camera_name="top").transpose(2,0,1).copy() # (3,84,84)
                     
@@ -124,6 +128,7 @@ def main():
                 img_arrays_sub.append(input_obs_visual)
                 state_arrays_sub.append(input_obs_sensor)
                 action_arrays_sub.append(action)
+                segmentation_arrays_sub.append(input_obs_segmentations)
                 point_cloud_arrays_sub.append(time_step.observation_pointcloud)
                 depth_arrays_sub.append(time_step.observation_depth)
                 
@@ -143,6 +148,7 @@ def main():
             point_cloud_arrays.extend(deepcopy(point_cloud_arrays_sub))
             depth_arrays.extend(deepcopy(depth_arrays_sub))
             state_arrays.extend(deepcopy(state_arrays_sub))
+            segmentation_arrays.extend(deepcopy(segmentation_arrays_sub))
             action_arrays.extend(deepcopy(action_arrays_sub))
             print('Episode: {}, Reward: {}, Goal Achieved: {}'.format(episode_idx, total_reward, n_goal_achieved_total)) 
             episode_idx += 1
@@ -160,6 +166,7 @@ def main():
     if img_arrays.shape[1] == 3: # make channel last
         img_arrays = np.transpose(img_arrays, (0,2,3,1))
     state_arrays = np.stack(state_arrays, axis=0)
+    segmentation_arrays = np.stack(segmentation_arrays, axis=0)
     point_cloud_arrays = np.stack(point_cloud_arrays, axis=0)
     depth_arrays = np.stack(depth_arrays, axis=0)
     action_arrays = np.stack(action_arrays, axis=0)
@@ -168,10 +175,12 @@ def main():
     compressor = zarr.Blosc(cname='zstd', clevel=3, shuffle=1)
     img_chunk_size = (100, img_arrays.shape[1], img_arrays.shape[2], img_arrays.shape[3])
     state_chunk_size = (100, state_arrays.shape[1])
+    segmentation_chunk_size = (100, segmentation_arrays.shape[1],segmentation_arrays.shape[2], segmentation_arrays.shape[3])
     point_cloud_chunk_size = (100, point_cloud_arrays.shape[1], point_cloud_arrays.shape[2])
     depth_chunk_size = (100, depth_arrays.shape[1], depth_arrays.shape[2])
     action_chunk_size = (100, action_arrays.shape[1])
     zarr_data.create_dataset('img', data=img_arrays, chunks=img_chunk_size, dtype='uint8', overwrite=True, compressor=compressor)
+    zarr_data.create_dataset('segmentations', data=segmentation_arrays, chunks=segmentation_chunk_size, dtype='uint8', overwrite=True, compressor=compressor)
     zarr_data.create_dataset('state', data=state_arrays, chunks=state_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
     zarr_data.create_dataset('point_cloud', data=point_cloud_arrays, chunks=point_cloud_chunk_size, dtype='float32', overwrite=True, compressor=compressor)
     zarr_data.create_dataset('depth', data=depth_arrays, chunks=depth_chunk_size, dtype='float32', overwrite=True, compressor=compressor)

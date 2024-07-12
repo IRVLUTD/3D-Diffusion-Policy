@@ -57,9 +57,12 @@ policy:
   use_pc_color: false
   pointnet_type: "pointnet"
 
+  n_cameras: 1
+
   use_pointcloud: false 
   use_image: true
   use_depth_image: false
+  use_segmentations: false
 
   pointcloud_encoder_cfg:
     in_channels: 3

@@ -47,6 +47,7 @@ class ExtendedTimeStepAdroit(NamedTuple):
     discount: Any
     observation: Any
     observation_sensor: Any
+    segmentations: Any
     action: Any
     n_goal_achieved: Any
     time_limit_reached: Any
@@ -292,12 +293,13 @@ class AdroitEnv:
 
     def reset(self):
         # pixels and sensor values
-        obs_pixels, obs_sensor = self._env.reset()
+        obs_pixels, obs_sensor, segmentations = self._env.reset()
         obs_sensor = obs_sensor.astype(np.float32)
         action_spec = self.action_spec()
         action = np.zeros(action_spec.shape, dtype=action_spec.dtype)
 
         time_step = ExtendedTimeStepAdroit(observation=obs_pixels,
+                                           segmentations=segmentations,
                                      observation_sensor=obs_sensor,
                                 step_type=StepType.FIRST,
                                 action=action,
@@ -309,13 +311,14 @@ class AdroitEnv:
 
     def get_current_obs_without_reset(self):
         # use this to obtain the first state in a demo
-        obs_pixels, obs_sensor = self._env.get_obs_for_first_state_but_without_reset()
+        obs_pixels, obs_sensor, segmentations = self._env.get_obs_for_first_state_but_without_reset()
         obs_sensor = obs_sensor.astype(np.float32)
         action_spec = self.action_spec()
         action = np.zeros(action_spec.shape, dtype=action_spec.dtype)
 
         time_step = ExtendedTimeStepAdroit(observation=obs_pixels,
                                      observation_sensor=obs_sensor,
+                                     segmentations=segmentations,
                                 step_type=StepType.FIRST,
                                 action=action,
                                 reward=0.0,
@@ -329,7 +332,7 @@ class AdroitEnv:
 
     def step(self, action, force_step_type=None, debug=False):
         obs_all, reward, done, env_info = self._env.step(action)
-        obs_pixels, obs_sensor = obs_all
+        obs_pixels, obs_sensor, segmentations = obs_all
         obs_sensor = obs_sensor.astype(np.float32)
 
         discount = 1.0
@@ -355,6 +358,7 @@ class AdroitEnv:
 
         time_step = ExtendedTimeStepAdroit(observation=obs_pixels,
                                      observation_sensor=obs_sensor,
+                                     segmentations=segmentations,
                                 step_type=steptype,
                                 action=action,
                                 reward=reward,

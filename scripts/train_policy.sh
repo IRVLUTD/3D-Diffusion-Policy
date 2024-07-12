@@ -10,8 +10,11 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/.mujoco/mujoco210/bin
 
 
 
+
 DEBUG=False
-save_ckpt=True
+save_ckpt=False
+wandb_mode=offline
+RECOMPILE=True
 
 alg_name=${1}
 task_name=${2}
@@ -26,6 +29,9 @@ run_dir="data/outputs/${exp_name}_seed${seed}"
 gpu_id=${5}
 echo -e "\033[33mgpu id (to use): ${gpu_id}\033[0m"
 
+if [ $RECOMPILE = True ]; then
+    rm third_party/mujoco-py-2.1.2.14/mujoco_py/generated/cymj_2.1.2.14_38_linuxgpuextensionbuilder_38.so
+fi
 
 if [ $DEBUG = True ]; then
     wandb_mode=offline
@@ -34,7 +40,6 @@ if [ $DEBUG = True ]; then
     echo -e "\033[33mDebug mode!\033[0m"
     echo -e "\033[33mDebug mode!\033[0m"
 else
-    wandb_mode=online
     echo -e "\033[33mTrain mode\033[0m"
 fi
 

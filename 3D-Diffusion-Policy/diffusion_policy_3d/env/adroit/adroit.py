@@ -319,6 +319,12 @@ class AdroitEnv:
                 shape=(84, 84),
                 dtype=np.float32
             ),
+            'segmentations': spaces.Box(
+                low=0,
+                high=255,
+                shape=(84, 84),
+                dtype=np.float32
+            ),
             'agent_pos': spaces.Box(
                 low=-np.inf,
                 high=np.inf,
@@ -337,14 +343,15 @@ class AdroitEnv:
 
     def reset(self):
         # pixels and sensor values
-        obs_pixels, obs_sensor = self._env.reset()
+        obs_pixels, obs_sensor, segmentations = self._env.reset()
         obs_sensor = obs_sensor.astype(np.float32)
         action_spec = self.action_spec()
         action = np.zeros(action_spec.shape, dtype=action_spec.dtype)
 
         obs_dict = {
             'img': obs_pixels,
-            'agent_pos': obs_sensor
+            'agent_pos': obs_sensor,
+            'segmentations': segmentations,
         }
         return obs_dict
 
@@ -372,7 +379,7 @@ class AdroitEnv:
 
         obs_all, reward, done, env_info = self._env.step(action)
 
-        obs_pixels, obs_sensor = obs_all
+        obs_pixels, obs_sensor, obs_segementations = obs_all
         obs_sensor = obs_sensor.astype(np.float32)
 
         discount = 1.0
@@ -390,9 +397,9 @@ class AdroitEnv:
 
         obs_dict = {
             'img': obs_pixels,  # (3, 84, 84), [0,255], uint8
-            'agent_pos': obs_sensor  # (24,)
+            'agent_pos': obs_sensor,  # (24,)
+            'segmentations': obs_segementations, # (2, 84, 84) int
         }
-
         return obs_dict, reward, done, env_info
 
     def observation_spec(self):

@@ -37,10 +37,12 @@ class DP3(BasePolicy):
             use_up_condition=True,
             encoder_output_dim=256,
             crop_shape=None,
+            n_cameras=1,
             use_pc_color=False,
             use_pointcloud=True,
             use_image=True,
             use_depth_image=False,
+            use_segmentations=False,
             pointnet_type="pointnet",
             pointcloud_encoder_cfg=None,
             # parameters passed to step
@@ -69,9 +71,11 @@ class DP3(BasePolicy):
             pointcloud_encoder_cfg=pointcloud_encoder_cfg,
             use_pc_color=use_pc_color,
             pointnet_type=pointnet_type,
+            n_cameras=n_cameras,
             use_pointcloud=use_pointcloud,
             use_image=use_image,
             use_depth_image=use_depth_image,
+            use_segmentations=use_segmentations,
         )
 
         # create diffusion model
